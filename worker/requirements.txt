@@ -1,0 +1,5 @@
+redis==8.1.0
+psycopg[binary]==3.3.4
+binance-connector==3.13.0
+cryptography==46.0.6
+python-dotenv==1.1.1
