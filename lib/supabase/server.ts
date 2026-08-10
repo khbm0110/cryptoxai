@@ -11,7 +11,20 @@ export async function createServerSupabase() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (name: string) => cookieStore.get(name)?.value,
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Called from a Server Component that can't set cookies directly.
+            // Safe to ignore as long as the session is also refreshed in middleware,
+            // or in this app's case, as long as Server Actions (which CAN set cookies) are what call this.
+          }
+        },
       },
     }
   );
