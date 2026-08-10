@@ -8,6 +8,7 @@ export default createMiddleware({
 });
 
 export const config = {
-  // run on every route except static assets and API routes
-  matcher: ['/((?!api|_next|.*\\..*).*)'],
+  // run on every route except static assets, API routes, and the Supabase
+  // auth callback (which lives outside [locale] and must not be locale-prefixed)
+  matcher: ['/((?!api|auth/callback|_next|.*\\..*).*)'],
 };
