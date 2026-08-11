@@ -68,6 +68,20 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     return { status: 'error', message: 'Incorrect email or password.' };
   }
 
+  // Route each role to the right landing page — not everyone belongs on the client dashboard.
+  const admin = createAdminSupabase();
+  const { data: profile } = await admin
+    .from('users')
+    .select('role')
+    .eq('id', data.user.id)
+    .single();
+
+  if (profile?.role === 'super_admin' || profile?.role === 'admin') {
+    redirect(`/${locale}/admin/roles`);
+  }
+
+  // trade_supervisor has no dedicated workspace yet — falls through to the shared
+  // dashboard along with 'client' until that page exists.
   redirect(`/${locale}/dashboard`);
 }
 
