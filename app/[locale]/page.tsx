@@ -25,7 +25,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: '
           </h1>
           <p className="hero-sub">{t('heroSubtitle')}</p>
           <div className="hero-cta">
-            <a href={`/${locale}/register`} style={{ padding: '15px 30px', borderRadius: 11, background: 'var(--ink)', color: '#fff', fontWeight: 600 }}>
+            <a href={`/${locale}/register`} style={{ padding: '15px 30px', borderRadius: 11, background: 'var(--signal)', color: 'var(--deep)', fontWeight: 600 }}>
               {t('ctaStart')}
             </a>
             <a href="#how" style={{ padding: '15px 30px', borderRadius: 11, border: '1px solid var(--hair)', color: 'var(--ink)', fontWeight: 600 }}>
@@ -158,7 +158,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: '
           <div className="cta-band" data-reveal>
             <h2>{t('finalCtaTitle')}</h2>
             <p>{t('finalCtaBody')}</p>
-            <a href={`/${locale}/register`} style={{ padding: '15px 30px', borderRadius: 11, background: 'var(--signal)', color: '#fff', fontWeight: 600 }}>
+            <a href={`/${locale}/register`} style={{ padding: '15px 30px', borderRadius: 11, background: 'var(--signal)', color: 'var(--deep)', fontWeight: 600 }}>
               {t('ctaStart')}
             </a>
           </div>

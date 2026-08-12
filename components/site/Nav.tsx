@@ -16,7 +16,7 @@ export default async function Nav({ locale }: { locale: 'en' | 'ar' }) {
           <a href={`/${locale}/login`} style={{ padding: '10px 18px', borderRadius: 9, border: '1px solid var(--hair)', color: 'var(--ink)' }}>
             {t('login')}
           </a>
-          <a href={`/${locale}/register`} style={{ padding: '10px 18px', borderRadius: 9, background: 'var(--ink)', color: '#fff' }}>
+          <a href={`/${locale}/register`} style={{ padding: '10px 18px', borderRadius: 9, background: 'var(--signal)', color: 'var(--deep)', fontWeight: 600 }}>
             {t('start')}
           </a>
         </div>

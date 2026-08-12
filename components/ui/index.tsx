@@ -20,7 +20,7 @@ export function Button({
     fontFamily: 'inherit',
   };
   const variants: Record<string, React.CSSProperties> = {
-    primary: { background: 'var(--ink)', color: '#fff' },
+    primary: { background: 'var(--signal)', color: 'var(--deep)' },
     ghost: { background: 'transparent', color: 'var(--ink)', borderColor: 'var(--hair)' },
   };
   return (

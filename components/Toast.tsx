@@ -21,7 +21,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             style={{
-              background: t.kind === 'error' ? 'var(--loss)' : 'var(--ink)',
+              background: t.kind === 'error' ? 'var(--loss)' : 'var(--deep)',
               color: '#fff',
               padding: '13px 18px',
               borderRadius: 10,
