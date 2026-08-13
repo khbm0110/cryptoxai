@@ -59,7 +59,7 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
   }
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     if (error.message.toLowerCase().includes('confirm')) {
