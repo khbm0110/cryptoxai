@@ -53,6 +53,7 @@ def _handle_message(r: redis.Redis, message_id: bytes, fields: dict) -> None:
     try:
         with db.get_connection() as conn:
             subscribers = db.get_eligible_subscribers(conn, signal["plan_ids"])
+            signal["_risk"] = db.get_signal_risk(conn, signal["signal_id"])
             logger.info(
                 "processing signal", extra={"signal_id": signal["signal_id"], "subscriber_count": len(subscribers)}
             )

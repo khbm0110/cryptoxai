@@ -72,6 +72,7 @@ export default function PlanCard({ plan, locale }: { plan: Plan; locale: 'en' | 
 
       <form action={formAction} style={{ marginTop: 'auto' }}>
         <input type="hidden" name="planId" value={plan.id} />
+        <input type="hidden" name="locale" value={locale} />
         <Button type="submit" variant={plan.featured ? 'primary' : 'ghost'} loading={pending} style={{ width: '100%' }}>
           {t('subscribe')}
         </Button>

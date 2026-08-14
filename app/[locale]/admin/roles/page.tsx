@@ -34,7 +34,10 @@ export default async function AdminRolesPage({ params }: { params: Promise<{ loc
 
   return (
     <main style={{ maxWidth: 900, margin: '0 auto', padding: '48px 24px' }}>
-      <h1 style={{ fontSize: 26 }}>{t('title')}</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ fontSize: 26 }}>{t('title')}</h1>
+        <a href={`/${locale}/admin/payments`} style={{ fontSize: 13.5, color: 'var(--signal)' }}>Payments →</a>
+      </div>
 
       <Card style={{ marginTop: 28 }}>
         <h2 style={{ fontSize: 17, marginBottom: 16 }}>{t('appoint')}</h2>

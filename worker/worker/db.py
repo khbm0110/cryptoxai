@@ -5,6 +5,7 @@ where it matters, e.g. the idempotent order insert).
 """
 from datetime import date, datetime, timezone
 from typing import Optional
+import json
 
 import psycopg
 from psycopg.rows import dict_row
@@ -61,6 +62,7 @@ def insert_pending_order(
     side: str,
     quantity: float,
     price: float,
+    signal_id: Optional[str] = None,
 ) -> Optional[dict]:
     """Inserts a PENDING order row. Returns None (not an error) if this exact
     (user_id, client_order_id) already exists — that's the idempotency guarantee
@@ -68,15 +70,83 @@ def insert_pending_order(
     try:
         return conn.execute(
             """
-            insert into orders (user_id, client_order_id, symbol, side, quantity, price, status)
-            values (%s, %s, %s, %s, %s, %s, 'pending')
+            insert into orders (user_id, client_order_id, symbol, side, quantity, price, status, signal_id)
+            values (%s, %s, %s, %s, %s, %s, 'pending', %s)
             returning id
             """,
-            (user_id, client_order_id, symbol, side, quantity, price),
+            (user_id, client_order_id, symbol, side, quantity, price, signal_id),
         ).fetchone()
     except psycopg.errors.UniqueViolation:
         conn.rollback()
         return None
+
+
+def get_signal_risk(conn: psycopg.Connection, signal_id: str) -> Optional[dict]:
+    """Stop-loss / take-profit live only in Postgres, never in the Redis message —
+    fetched once per signal (not per subscriber) and reused across the batch."""
+    return conn.execute(
+        "select stop_loss, take_profit from signals where id = %s",
+        (signal_id,),
+    ).fetchone()
+
+
+def open_position(
+    conn: psycopg.Connection,
+    order_id: str,
+    signal_id: str,
+    user_id: str,
+    symbol: str,
+    side: str,
+    quantity: float,
+    stop_loss: float,
+    take_profit: list[dict],
+) -> None:
+    """Called right after an entry order fills. `take_profit` targets are copied
+    from the signal with a `hit: false` flag added — the monitor updates this
+    array in place as targets are reached, so none fires twice."""
+    targets_with_flags = [{**t, "hit": False} for t in take_profit]
+    conn.execute(
+        """
+        insert into positions
+            (order_id, signal_id, user_id, symbol, side, entry_quantity, remaining_quantity, stop_loss, take_profit)
+        values (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+        """,
+        (order_id, signal_id, user_id, symbol, side, quantity, quantity, stop_loss, json.dumps(targets_with_flags)),
+    )
+
+
+def get_open_positions(conn: psycopg.Connection) -> list[dict]:
+    """Joins in the owning user's encrypted keys — the monitor needs them to both
+    price the position and, if triggered, place the exit order."""
+    return conn.execute(
+        """
+        select po.id, po.order_id, po.signal_id, po.user_id, po.symbol, po.side,
+               po.entry_quantity, po.remaining_quantity, po.stop_loss, po.take_profit,
+               u.binance_api_key_enc, u.binance_secret_enc
+        from positions po
+        join users u on u.id = po.user_id
+        where po.status = 'open'
+        """
+    ).fetchall()
+
+
+def update_position(
+    conn: psycopg.Connection,
+    position_id: str,
+    remaining_quantity: float,
+    take_profit: list[dict],
+    status: str = "open",
+) -> None:
+    closed_at_clause = "now()" if status == "closed" else "null"
+    conn.execute(
+        f"""
+        update positions
+        set remaining_quantity = %s, take_profit = %s::jsonb, status = %s,
+            closed_at = {closed_at_clause}, updated_at = now()
+        where id = %s
+        """,
+        (remaining_quantity, json.dumps(take_profit), status, position_id),
+    )
 
 
 def update_order_status(

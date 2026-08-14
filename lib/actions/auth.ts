@@ -80,8 +80,11 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     redirect(`/${locale}/admin/roles`);
   }
 
-  // trade_supervisor has no dedicated workspace yet — falls through to the shared
-  // dashboard along with 'client' until that page exists.
+  if (profile?.role === 'trade_supervisor') {
+    redirect(`/${locale}/supervisor`);
+  }
+
+  // client falls through to the shared dashboard.
   redirect(`/${locale}/dashboard`);
 }
 

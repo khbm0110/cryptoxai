@@ -60,7 +60,8 @@ def process_user_signal(conn, redis_client, signal: dict, subscriber: dict) -> N
         return
 
     order_row = db.insert_pending_order(
-        conn, user_id, client_order_id, signal["symbol"], signal["side"], quantity, live_price
+        conn, user_id, client_order_id, signal["symbol"], signal["side"], quantity, live_price,
+        signal_id=signal["signal_id"],
     )
     if order_row is None:
         logger.info("duplicate signal for user, already processed", extra={"user_id": user_id})
@@ -69,10 +70,21 @@ def process_user_signal(conn, redis_client, signal: dict, subscriber: dict) -> N
     order_id = order_row["id"]
     db.update_order_status(conn, order_id, "executing")
 
-    _execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secret, signal, quantity, client_order_id)
+    filled = execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secret, signal, quantity, client_order_id)
+
+    if filled:
+        risk = signal.get("_risk")  # populated once by consumer.py before the subscriber loop
+        if risk and risk.get("stop_loss"):
+            db.open_position(
+                conn, order_id, signal["signal_id"], user_id, signal["symbol"], signal["side"],
+                quantity, risk["stop_loss"], risk["take_profit"] or [],
+            )
 
 
-def _execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secret, signal, quantity, client_order_id):
+def execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secret, signal, quantity, client_order_id) -> bool:
+    """Returns True if the order filled. Also used by position_monitor.py for
+    stop-loss / take-profit exit orders — same retry, backoff, and circuit
+    breaker behavior applies whether it's an entry or an exit."""
     last_error = None
 
     for attempt in range(1, Config.RETRY_ATTEMPTS + 1):
@@ -82,7 +94,7 @@ def _execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secr
             )
             db.update_order_status(conn, order_id, "filled", binance_order_id=response.get("orderId"))
             circuit_breaker.record_success(redis_client, user_id)
-            return
+            return True
         except binance_client.BinanceExecutionError as e:
             last_error = str(e)
             if not e.is_retriable:
@@ -94,3 +106,4 @@ def _execute_with_retry(conn, redis_client, order_id, user_id, api_key, api_secr
 
     db.update_order_status(conn, order_id, "failed", error_message=last_error)
     circuit_breaker.record_failure(redis_client, user_id)
+    return False

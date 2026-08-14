@@ -65,5 +65,11 @@ class _LazyConfig:
     def RETRY_BASE_DELAY_SECONDS(self) -> float:
         return float(os.environ.get("RETRY_BASE_DELAY_SECONDS", "0.5"))
 
+    @property
+    def POSITION_POLL_SECONDS(self) -> int:
+        """How often the stop-loss / take-profit monitor checks live prices
+        against open positions. Lower = tighter risk control, more API calls."""
+        return int(os.environ.get("POSITION_POLL_SECONDS", "10"))
+
 
 Config = _LazyConfig()
